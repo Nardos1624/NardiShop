@@ -63,7 +63,7 @@ export default async function SingleProductPage({
                 ${product.price.toFixed(2)}
               </p>
 
-              {/* FIXED: Removed the 'b' from 'pt-6' and added border-zinc-300 */}
+             
               <div className="border-t border-[rgb(255, 182, 193)] pt-6">
                 <h3 className="text-lg font-bold text-zinc-900">Description</h3>
                 <p className="text-zinc-600 mt-2 leading-relaxed">

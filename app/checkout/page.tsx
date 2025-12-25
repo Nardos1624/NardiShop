@@ -5,7 +5,7 @@ import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CreditCard, Truck, ShoppingBag, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { CreditCard, Truck, ShoppingBag, ShieldCheck, CheckCircle2, User, X } from "lucide-react"; 
 import { useCart } from "@/hooks/use-cart";
 import Image from "next/image";
 import Link from "next/link";
@@ -14,6 +14,9 @@ export default function CheckoutPage() {
   const pinkColor = "rgb(255, 182, 193)";
   const { items, clearCart } = useCart();
   const [isOrdered, setIsOrdered] = useState(false);
+  
+  // NEW: State to show the selection modal before finalizing
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const inputStyles = "bg-zinc-900 border-zinc-700 text-white transition-all outline-none focus:border-[rgb(255,182,193)] focus:ring-1 focus:ring-[rgb(255,182,193)]/30";
 
@@ -21,10 +24,15 @@ export default function CheckoutPage() {
   const shipping = items.length > 0 ? 10.00 : 0;
   const total = subtotal + shipping;
 
-  // This function only runs if the browser validation passes
-  const handlePlaceOrder = (e: React.FormEvent) => {
-    e.preventDefault(); // Prevents the page from refreshing
-    
+  // This runs when the button is clicked
+  const handleCheckoutClick = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Instead of ordering immediately, we show the login/signup option
+    setShowAuthModal(true);
+  };
+
+  // This runs when they finally click "Complete as Guest" inside the modal
+  const finalizeOrder = () => {
     setIsOrdered(true);
     clearCart();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -55,15 +63,58 @@ export default function CheckoutPage() {
   return (
     <>
       <Navbar />
+      
+      {/* AUTH SELECTION MODAL */}
+      {showAuthModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#2a2a2a] w-full max-w-lg p-8 rounded-3xl border border-zinc-800 shadow-2xl relative animate-in fade-in zoom-in duration-300">
+            <button 
+              onClick={() => setShowAuthModal(false)}
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white"
+            >
+              <X size={24} />
+            </button>
+            
+            <div className="text-center mb-8">
+              <div className="inline-flex p-4 rounded-full bg-zinc-900 mb-4">
+                <User size={32} style={{ color: pinkColor }} />
+              </div>
+              <h2 className="text-2xl font-bold">Wait! Save your info?</h2>
+              <p className="text-zinc-400 text-sm mt-2">Log in or Sign up to track your order and get rewards.</p>
+            </div>
+
+            <div className="space-y-3">
+              <Button asChild className="w-full h-12 font-bold" style={{ backgroundColor: pinkColor, color: "#212121" }}>
+                <Link href="/login">Log In to Account</Link>
+              </Button>
+              <Button asChild variant="outline" className="w-full h-12 border-zinc-700 hover:bg-zinc-800 font-bold text-white">
+                <Link href="/signup">Create New Account</Link>
+              </Button>
+              
+              <div className="relative py-4">
+                <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-zinc-800"></span></div>
+                <div className="relative flex justify-center text-xs uppercase"><span className="bg-[#2a2a2a] px-2 text-zinc-500">Or</span></div>
+              </div>
+
+              <Button 
+                onClick={finalizeOrder}
+                variant="ghost" 
+                className="w-full h-12 text-zinc-400 hover:text-white underline decoration-zinc-700"
+              >
+                No thanks, checkout as guest
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="min-h-screen bg-[#212121] text-[#E0E0E0] py-12">
         <div className="container mx-auto px-4 md:px-8">
           <h1 className="text-4xl font-bold mb-10">
             Finalize <span style={{ color: pinkColor }}>Checkout</span>
           </h1>
 
-          {/* 1. Added the <form> wrapper around everything */}
-          <form onSubmit={handlePlaceOrder} className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-            
+          <form onSubmit={handleCheckoutClick} className="grid grid-cols-1 lg:grid-cols-12 gap-12">
             <div className="lg:col-span-7 space-y-8">
               <section className="bg-[#2a2a2a] p-6 rounded-2xl border border-zinc-800">
                 <div className="flex items-center gap-3 mb-6">
@@ -71,9 +122,9 @@ export default function CheckoutPage() {
                   <h2 className="text-xl font-semibold">Shipping Information</h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* 2. Added 'required' to make these mandatory */}
                   <Input placeholder="First Name" className={inputStyles} required />
                   <Input placeholder="Last Name" className={inputStyles} required />
+                  <Input placeholder="Email Address" type="email" className={`md:col-span-2 ${inputStyles}`} required />
                   <Input placeholder="Address" className={`md:col-span-2 ${inputStyles}`} required />
                   <Input placeholder="City" className={inputStyles} required />
                   <Input placeholder="Postal Code" className={inputStyles} required />
@@ -123,7 +174,6 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* 3. Changed to type="submit" */}
                 <Button 
                   type="submit"
                   disabled={items.length === 0}
