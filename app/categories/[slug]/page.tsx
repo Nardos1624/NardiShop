@@ -1,7 +1,7 @@
 import Footer from "@/components/footer";
 import Navbar from "@/components/navbar";
 import ProductCard from "@/components/product-card";
-import { getCategoryBySlug, getProductsByCategory } from "@/lib/data";
+import { getCategoryBySlug, getProductsByCategory, getAllCategories } from "@/lib/data"; // Added getAllCategories
 import { notFound } from "next/navigation";
 
 // Next.js 15 requires params to be a Promise
@@ -9,6 +9,15 @@ interface CategoryPageProps {
   params: Promise<{
     slug: string;
   }>;
+}
+
+// 1. Add this function to tell Next.js which pages to build for GitHub Pages
+export async function generateStaticParams() {
+  const categories = getAllCategories();
+  
+  return categories.map((category) => ({
+    slug: category.slug,
+  }));
 }
 
 async function CategoryPage({ params }: CategoryPageProps) {
