@@ -3,7 +3,7 @@ import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/hooks/use-cart";
 const montserrat = Montserrat({ 
- 
+ subsets: ["latin"],
   weight: ["400"],
   variable: "--font-sans",
 });
