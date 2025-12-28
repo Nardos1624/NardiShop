@@ -6,7 +6,7 @@ const products: Product[] = [
     name: "Minimal Desk Lamp",
     description: "A sleek, adjustable desk lamp with minimalist design.",
     price: 49.99,
-    image: "/NardiShop/placeholder/lamp.png", // Added /NardiShop
+    image: "/NardiShop/placeholder/lamp.png", 
     category: "Home Decor",
   },
   {
@@ -14,7 +14,7 @@ const products: Product[] = [
     name: "Ergonomic Office Chair",
     description: "Comfortable office chair with lumbar support and adjustable height.",
     price: 199.99,
-    image: "/NardiShop/placeholder/chair.png", // Added /NardiShop
+    image: "/NardiShop/placeholder/chair.png",
     category: "Furniture",
   },
   {
@@ -22,7 +22,7 @@ const products: Product[] = [
     name: "Wireless Earbuds",
     description: "Premium wireless earbuds with noise cancellation.",
     price: 129.99,
-    image: "/NardiShop/placeholder/earpod.png", // Added /NardiShop
+    image: "/NardiShop/placeholder/earpod.png",
     category: "Electronics",
   },
   {
@@ -30,7 +30,7 @@ const products: Product[] = [
     name: "Ceramic Coffee Mug",
     description: "Handcrafted ceramic mug with minimalist design.",
     price: 24.99,
-    image: "/NardiShop/placeholder/coffeemug.png", // Added /NardiShop
+    image: "/NardiShop/placeholder/coffeemug.png",
     category: "Kitchen",
   },
   {
@@ -38,7 +38,7 @@ const products: Product[] = [
     name: "Leather Wallet",
     description: "Genuine leather wallet with multiple card slots.",
     price: 59.99,
-    image: "/NardiShop/placeholder/wallet.png", // Added /NardiShop
+    image: "/NardiShop/placeholder/wallet.png", 
     category: "Accessories",
   },
   {
@@ -46,7 +46,7 @@ const products: Product[] = [
     name: "Smart Watch",
     description: "Feature-rich smartwatch with health tracking capabilities.",
     price: 249.99,
-    image: "/NardiShop/placeholder/smartwatch.png", // Added /NardiShop
+    image: "/NardiShop/placeholder/smartwatch.png",
     category: "Electronics",
   },
   {
@@ -54,7 +54,7 @@ const products: Product[] = [
     name: "Cotton T-Shirt",
     description: "Premium cotton t-shirt with a comfortable fit.",
     price: 29.99,
-    image: "/NardiShop/placeholder/cottontshirt.png", // Added /NardiShop
+    image: "/NardiShop/placeholder/cottontshirt.png",
     category: "Clothing",
   },
   {
@@ -62,7 +62,7 @@ const products: Product[] = [
     name: "Bluetooth Speaker",
     description: "Portable bluetooth speaker with rich sound quality.",
     price: 79.99,
-    image: "/NardiShop/placeholder/bluetoothspeaker.png", // Added /NardiShop
+    image: "/NardiShop/placeholder/bluetoothspeaker.png",
     category: "Electronics",
   },
 ];
@@ -72,19 +72,19 @@ const categories: Category[] = [
     id: "1",
     name: "Electronics",
     slug: "electronics",
-    image: "/NardiShop/placeholder/iphone.png", // Added /NardiShop
+    image: "/NardiShop/placeholder/iphones.png", 
   },
   {
     id: "2",
     name: "Clothing",
     slug: "clothing",
-    image: "/NardiShop/placeholder/fashions.png", // Added /NardiShop
+    image: "/NardiShop/placeholder/fashions.png",
   },
   {
     id: "3",
     name: "Home Decor",
     slug: "home-decor",
-    image: "/NardiShop/placeholder/homedecore.png", // Added /NardiShop
+    image: "/NardiShop/placeholder/homedecore.png", 
   },
   {
     id: "4",
@@ -96,13 +96,13 @@ const categories: Category[] = [
     id: "5",
     name: "Kitchen",
     slug: "kitchen",
-    image: "/NardiShop/placeholder/kitchen.png", // Added /NardiShop
+    image: "/NardiShop/placeholder/kitchen.png", 
   },
   {
     id: "6",
     name: "Accessories",
     slug: "accessories",
-    image: "/NardiShop/placeholder/acessories.png", // Added /NardiShop
+    image: "/NardiShop/placeholder/acessories.png", 
   },
 ];
 
