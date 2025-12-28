@@ -1,4 +1,4 @@
-import { getProductById } from "@/lib/data";
+import { getProductById, getAllProducts } from "@/lib/data"; // Added getAllProducts import
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import Image from "next/image";
@@ -7,6 +7,15 @@ import AddToCartButton from "@/components/add-to-cart-button";
 
 interface Params {
   id: string;
+}
+
+// 1. Added generateStaticParams to fix the "output: export" build error
+export async function generateStaticParams() {
+  const products = getAllProducts();
+  
+  return products.map((product) => ({
+    id: product.id,
+  }));
 }
 
 // Next.js 15 requires params to be treated as a Promise
