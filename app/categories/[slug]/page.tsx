@@ -3,13 +3,16 @@ import Navbar from "@/components/navbar";
 import ProductCard from "@/components/product-card";
 import { getCategoryBySlug, getProductsByCategory } from "@/lib/data";
 import { notFound } from "next/navigation";
+
+// Next.js 15 requires params to be a Promise
 interface CategoryPageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 async function CategoryPage({ params }: CategoryPageProps) {
+  // You must await the params before using them
   const { slug } = await params;
   const category = getCategoryBySlug(slug);
 
@@ -26,7 +29,7 @@ async function CategoryPage({ params }: CategoryPageProps) {
         <div className="container mx-auto px-4 py-4 md:py-6 md:px-8">
           <h1 className="text-3xl font-bold mb-8">
             <span style={{ color: "rgb(255,182,193)" }}>{category.name}</span>
-            </h1>
+          </h1>
 
           {products.length === 0 ? (
             <div className="text-center py-12">
