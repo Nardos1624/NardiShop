@@ -4,7 +4,7 @@ import localFont from "next/font/local";
 const montserrat = localFont({
   src: [
     {
-      path: "../public/fonts/Montserrat-VariableFont_wght.ttf",
+      path: "../public/fonts/Montserrat-Regular.ttf",
       weight: "400",
       style: "normal",
     },
