@@ -1,12 +1,19 @@
 import type { Metadata } from "next";
-import { Montserrat } from "next/font/google";
-import "./globals.css";
-import { CartProvider } from "@/hooks/use-cart";
-const montserrat = Montserrat({ 
- subsets: ["latin"],
-  weight: ["400"],
+import localFont from "next/font/local";
+
+const montserrat = localFont({
+  src: [
+    {
+      path: "../public/fonts/Montserrat-VariableFont_wght.ttf",
+      weight: "400",
+      style: "normal",
+    },
+  ],
   variable: "--font-sans",
 });
+
+import "./globals.css";
+import { CartProvider } from "@/hooks/use-cart";
 
 export const metadata: Metadata = {
   title: {
@@ -27,7 +34,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       {/* 3. Add the font class to the body */}
-      <body className={`${montserrat.className} antialiased bg-[#212121]`}>
+      <body className={`${montserrat.variable} antialiased bg-[#212121]`}>
         <CartProvider>{children}</CartProvider>
       </body>
     </html>
