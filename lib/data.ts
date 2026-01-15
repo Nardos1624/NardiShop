@@ -22,7 +22,7 @@ const products: Product[] = [
     name: "Wireless Earbuds",
     description: "Premium wireless earbuds with noise cancellation.",
     price: 129.99,
-    image: "/NardiShop/placeholder/earpod.png",
+    image: "/placeholder/earpod.png",
     category: "Electronics",
   },
   {
