@@ -122,7 +122,7 @@ const HeroSection = () => {
         
             <div className="relative w-[600px] h-[300px] md:w-[500px] md:h-[500px] bg-[#212121] ">
                 <Image 
-                  src="/NardiShop/placeholder/home-image.png" 
+                  src="/placeholder/home-image.png" 
                   alt="Earpods" 
                   fill 
                   className="object-contain"

@@ -6,7 +6,7 @@ const products: Product[] = [
     name: "Minimal Desk Lamp",
     description: "A sleek, adjustable desk lamp with minimalist design.",
     price: 49.99,
-    image: "/NardiShop/placeholder/lamp.png", 
+    image: "/placeholder/lamp.png", 
     category: "Home Decor",
   },
   {
@@ -14,7 +14,7 @@ const products: Product[] = [
     name: "Ergonomic Office Chair",
     description: "Comfortable office chair with lumbar support and adjustable height.",
     price: 199.99,
-    image: "/NardiShop/placeholder/chair.png",
+    image: "/placeholder/chair.png",
     category: "Furniture",
   },
   {
@@ -30,7 +30,7 @@ const products: Product[] = [
     name: "Ceramic Coffee Mug",
     description: "Handcrafted ceramic mug with minimalist design.",
     price: 24.99,
-    image: "/NardiShop/placeholder/coffeemug.png",
+    image: "/placeholder/coffeemug.png",
     category: "Kitchen",
   },
   {
@@ -38,7 +38,7 @@ const products: Product[] = [
     name: "Leather Wallet",
     description: "Genuine leather wallet with multiple card slots.",
     price: 59.99,
-    image: "/NardiShop/placeholder/wallet.png", 
+    image: "/placeholder/wallet.png", 
     category: "Accessories",
   },
   {
@@ -46,7 +46,7 @@ const products: Product[] = [
     name: "Smart Watch",
     description: "Feature-rich smartwatch with health tracking capabilities.",
     price: 249.99,
-    image: "/NardiShop/placeholder/smartwatch.png",
+    image: "/placeholder/smartwatch.png",
     category: "Electronics",
   },
   {
@@ -54,7 +54,7 @@ const products: Product[] = [
     name: "Cotton T-Shirt",
     description: "Premium cotton t-shirt with a comfortable fit.",
     price: 29.99,
-    image: "/NardiShop/placeholder/cottontshirt.png",
+    image: "/placeholder/cottontshirt.png",
     category: "Clothing",
   },
   {
@@ -62,7 +62,7 @@ const products: Product[] = [
     name: "Bluetooth Speaker",
     description: "Portable bluetooth speaker with rich sound quality.",
     price: 79.99,
-    image: "/NardiShop/placeholder/bluetoothspeaker.png",
+    image: "/placeholder/bluetoothspeaker.png",
     category: "Electronics",
   },
 ];
@@ -72,37 +72,37 @@ const categories: Category[] = [
     id: "1",
     name: "Electronics",
     slug: "electronics",
-    image: "/NardiShop/placeholder/iphones.png", 
+    image: "/placeholder/iphones.png", 
   },
   {
     id: "2",
     name: "Clothing",
     slug: "clothing",
-    image: "/NardiShop/placeholder/fashions.png",
+    image: "/placeholder/fashions.png",
   },
   {
     id: "3",
     name: "Home Decor",
     slug: "home-decor",
-    image: "/NardiShop/placeholder/homedecore.png", 
+    image: "/placeholder/homedecore.png", 
   },
   {
     id: "4",
     name: "Furniture",
     slug: "furniture",
-    image: "/NardiShop/placeholder/furniture.png", // Added /NardiShop
+    image: "/placeholder/furniture.png",
   },
   {
     id: "5",
     name: "Kitchen",
     slug: "kitchen",
-    image: "/NardiShop/placeholder/kitchen.png", 
+    image: "/placeholder/kitchen.png", 
   },
   {
     id: "6",
     name: "Accessories",
     slug: "accessories",
-    image: "/NardiShop/placeholder/acessories.png", 
+    image: "/placeholder/acessories.png", 
   },
 ];
 
