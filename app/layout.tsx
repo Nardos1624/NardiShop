@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   },
   description: "Discover stylish products.",
   icons: {
-    icon: "  /NardiShop/placeholder/icon.png", 
+    icon: "  /placeholder/icon.png", 
   },
 };
 
