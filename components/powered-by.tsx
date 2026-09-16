@@ -1,3 +1,5 @@
+"use client";
+
 function PoweredBy() {
   return (
     <div
