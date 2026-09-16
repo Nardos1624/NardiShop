@@ -1,4 +1,5 @@
 import Footer from "@/components/footer";
+import PoweredBy from "@/components/powered-by";
 import Navbar from "@/components/navbar";
 export default function AboutPage() {
   const pinkColor = "rgb(255, 182, 193)";
@@ -45,6 +46,7 @@ export default function AboutPage() {
       </div>
     </div>
     <Footer/>
+    <PoweredBy/>
     </>
   );
 }

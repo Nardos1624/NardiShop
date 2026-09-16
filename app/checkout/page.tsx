@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
+import PoweredBy from "@/components/powered-by";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CreditCard, Truck, ShoppingBag, ShieldCheck, CheckCircle2, User, X } from "lucide-react"; 
@@ -55,10 +56,11 @@ export default function CheckoutPage() {
             </Button>
           </div>
         </div>
-        <Footer />
-      </>
-    );
-  }
+<Footer />
+      <PoweredBy />
+    </>
+  );
+}
 
   return (
     <>

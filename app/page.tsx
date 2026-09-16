@@ -6,6 +6,7 @@ import Footer from "@/components/footer";
 import HeroSection from "@/components/hero-section";
 import Navbar from "@/components/navbar";
 import NewsLetter from "@/components/news-letter";
+import PoweredBy from "@/components/powered-by";
 
 function Home() {
   return (
@@ -16,6 +17,7 @@ function Home() {
       <FeaturedProducts />
       <NewsLetter />
       <Footer />
+      <PoweredBy />
     </>
   );
 }

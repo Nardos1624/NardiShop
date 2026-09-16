@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
+import PoweredBy from "@/components/powered-by";
 import { Mail, Phone, MapPin, CheckCircle2, X } from "lucide-react"; // Added CheckCircle2 and X
 import { Button } from "@/components/ui/button";
 
@@ -167,6 +168,7 @@ export default function ContactPage() {
         </div>
       </div>
       <Footer />
+      <PoweredBy />
     </>
   );
 }

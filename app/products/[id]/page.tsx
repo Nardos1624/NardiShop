@@ -1,6 +1,7 @@
 import { getProductById, getAllProducts } from "@/lib/data"; // Added getAllProducts import
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
+import PoweredBy from "@/components/powered-by";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import AddToCartButton from "@/components/add-to-cart-button";
@@ -89,6 +90,7 @@ export default async function SingleProductPage({
       </div>
 
       <Footer />
+      <PoweredBy />
     </>
   );
 }

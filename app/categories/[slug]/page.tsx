@@ -1,4 +1,5 @@
 import Footer from "@/components/footer";
+import PoweredBy from "@/components/powered-by";
 import Navbar from "@/components/navbar";
 import ProductCard from "@/components/product-card";
 import { getCategoryBySlug, getProductsByCategory, getAllCategories } from "@/lib/data"; // Added getAllCategories
@@ -56,6 +57,7 @@ async function CategoryPage({ params }: CategoryPageProps) {
         </div>
       </section>
       <Footer />
+      <PoweredBy />
     </>
   );
 }

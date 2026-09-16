@@ -1,5 +1,6 @@
 import Footer from "@/components/footer";
 import Navbar from "@/components/navbar";
+import PoweredBy from "@/components/powered-by";
 import Products from "@/components/products";
 
 function ProductsPage() {
@@ -8,6 +9,7 @@ function ProductsPage() {
       <Navbar />
       <Products />
       <Footer />
+      <PoweredBy />
     </>
   );
 }

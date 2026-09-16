@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import FilterSidebar from "@/components/filter-sidebar";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
+import PoweredBy from "@/components/powered-by";
 
 // 1. Created a sub-component for the search logic
 function SearchContent() {
@@ -187,6 +188,7 @@ export default function Search() {
         </Suspense>
       </div>
       <Footer />
+      <PoweredBy />
     </>
   );
 }
