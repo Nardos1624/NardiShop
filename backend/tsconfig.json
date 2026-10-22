@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    /* File Layout */
+    "rootDir": "./src",
+    "outDir": "./dist",
+
+    /* Environment Settings (Updated for clean extensionless resolution) */
+    "module": "Preserve",                        /* Preserves modern ES imports without forcing extensions */
+    "target": "ES2022",
+    "moduleResolution": "Bundler",               /* Allows clean, extensionless paths just like modern builders */
+    "lib": ["es2022"],
+    "types": ["node"],
+
+    /* Interoperability & Imports */
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "verbatimModuleSyntax": false,
+    "isolatedModules": true,
+
+    /* TypeORM Required Configurations */
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "strictPropertyInitialization": false,
+
+    /* Other Outputs */
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+
+    /* Stricter Typechecking Options */
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src/**/*"]
+}
