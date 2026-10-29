@@ -3,7 +3,6 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import {
   Accordion,
@@ -44,11 +43,7 @@ interface FilterSidebarProps {
 function FilterSidebar({
   categories,
   selectedCategories,
-  priceRange,
-  minPrice,
-  maxPrice,
   onCategoryChange,
-  onPriceChange,
   onClearFilters,
 }: FilterSidebarProps) {
   return (

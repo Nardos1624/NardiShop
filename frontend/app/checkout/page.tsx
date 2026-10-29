@@ -116,7 +116,7 @@ export default function CheckoutPage() {
           { method: "POST" },
           true
         );
-        await clearCart(true);
+        clearCart();
       } catch (requestError) {
         setCheckoutError(
           requestError instanceof Error ? requestError.message : "Checkout failed."
@@ -126,7 +126,7 @@ export default function CheckoutPage() {
       }
       setIsSubmitting(false);
     } else {
-      await clearCart();
+      clearCart();
     }
 
     setIsOrdered(true);

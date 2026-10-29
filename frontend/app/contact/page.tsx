@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import PoweredBy from "@/components/powered-by";
-import { ArrowUpRight, MapPin, MessageCircle, Phone, ShoppingBag, Truck, Wallet } from "lucide-react";
+import { ArrowUpRight, MapPin, MessageCircle, Phone } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -84,7 +84,7 @@ export default function ContactPage() {
                 Let’s talk about{" "}
                 <span className="bg-linear-to-r from-amber-200 via-[#D4AF37] to-yellow-600 bg-clip-text text-transparent">
                   your next order
-                </span>
+                </span>                                                                                                                                                                                                                                                                       
               </h1> */}
               <p className="mt-6 max-w-xl text-lg leading-relaxed text-zinc-300">
                 Questions about a product, sizing or delivery? Skip the forms and reach us the way you like best —
