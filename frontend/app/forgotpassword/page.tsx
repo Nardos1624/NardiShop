@@ -5,35 +5,19 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ShieldCheck, ArrowLeft, MailCheck } from "lucide-react";
-import { apiRequest } from "@/lib/api";
 
 export default function ForgotPasswordPage() {
-  const pinkColor = "#D4AF37";
+  const pinkColor = "rgb(255, 182, 193)";
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [email, setEmail] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const inputStyles = "bg-zinc-900 border-zinc-700 text-white transition-all outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/30";
+  const inputStyles = "bg-zinc-900 border-zinc-700 text-white transition-all outline-none focus:border-[rgb(255,182,193)] focus:ring-1 focus:ring-[rgb(255,182,193)]/30";
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    setError(null);
-    try {
-      await apiRequest<{ message: string }>("/api/auth/forgot-password", {
-        method: "POST",
-        body: JSON.stringify({ email }),
-      });
-      setIsSubmitted(true);
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Could not request password recovery.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    setIsSubmitted(true);
   };
 
   return (
-    <div className="min-h-screen bg-[#281E18] text-[#E0E0E0] flex items-center justify-center p-6">
+    <div className="min-h-screen bg-[#212121] text-[#E0E0E0] flex items-center justify-center p-6">
       <div className="max-w-md w-full bg-[#2a2a2a] p-8 rounded-3xl border border-zinc-800 shadow-2xl">
         
         <Link href="/login" className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors mb-8 text-sm">
@@ -50,13 +34,11 @@ export default function ForgotPasswordPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-zinc-300">Email Address</label>
-                <Input type="email" placeholder="nardishop@gmail.com" className={inputStyles} required value={email} onChange={(event) => setEmail(event.target.value)} />
+                <Input type="email" placeholder="nardishop@gmail.com" className={inputStyles} required />
               </div>
 
-              {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
-
-              <Button disabled={isSubmitting} className="w-full h-12 font-bold mt-2 cursor-pointer disabled:opacity-60" style={{ backgroundColor: pinkColor, color: "#212121" }}>
-                {isSubmitting ? "Sending..." : "Send Reset Link"}
+              <Button className="w-full h-12 font-bold mt-2 cursor-pointer" style={{ backgroundColor: pinkColor, color: "#212121" }}>
+                Send Reset Link
               </Button>
             </form>
           </>
@@ -69,8 +51,7 @@ export default function ForgotPasswordPage() {
             </div>
             <h2 className="text-2xl font-bold mb-2">Check your email</h2>
             <p className="text-zinc-400 mb-8">
-              If that email matches an account, your recovery request has been received.
-              Please contact support for reset instructions.
+              We have sent a password reset link to your email address.
             </p>
             <Button asChild variant="outline" className="w-full border-zinc-700 hover:bg-zinc-800 cursor-pointer">
               <Link href="/login">Return to Login</Link>

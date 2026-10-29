@@ -13,13 +13,13 @@ interface ProductCartProps {
 export default function AddToCartButton({ product, className }: ProductCartProps) {
   const { addToCart } = useCart();
 
-
+  // Adds one unit; the quantity is changed in the cart or at checkout
   const handleAddToCart = () => {
     addToCart(product);
   };
 
   return (
-    <Button 
+    <Button
       onClick={handleAddToCart} 
       className={`w-full md:w-auto px-8 py-6 text-lg  rounded-full transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center ${className}`}
       style={{ 

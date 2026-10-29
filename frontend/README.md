@@ -84,7 +84,7 @@ A clean, modern e-commerce website built with Next.js, Tailwind CSS, and shadcn/
 
 ### Backend API
 
-Start the backend from `Nardishop_backend` on port `5000` before using live catalog, authentication, cart, or account checkout features. The frontend proxies `/api/*` and `/uploads/*` to `http://localhost:5000` by default. Set `BACKEND_API_URL` in the frontend environment to use a different backend origin.
+Start the backend on port `5000` before using live catalog, authentication, cart, or account checkout features. From the repository root, copy `backend/.env.example` to `backend/.env` and set the PostgreSQL credentials. In a separate terminal, run `cd backend && pnpm install && pnpm dev`. Run `pnpm dev` from `frontend` in another terminal. The frontend proxies `/api/*` and `/uploads/*` to `http://localhost:5000` by default. Set `BACKEND_API_URL` in `frontend/.env.local` to use a different backend origin. The backend only listens after connecting to PostgreSQL; if the browser reports `ECONNREFUSED`, check the backend terminal and verify `http://localhost:5000/health` first.
 
 - Products, login, registration, and password recovery use the corresponding `/api` endpoints.
 - Administrators are redirected to `/admin` after login, where they can upload and delete products. Product uploads are sent as multipart form data and require an administrator account.

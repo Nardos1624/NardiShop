@@ -2,210 +2,132 @@
 
 import { Product } from "@/lib/types";
 import {
-  ApiCartItem,
-  apiRequest,
-  expandCartItems,
-  getAuthToken,
-} from "@/lib/api";
-import {
   createContext,
   ReactNode,
-  useCallback,
   useContext,
   useEffect,
-  useRef,
   useState,
 } from "react";
 
 interface CartContextType {
   items: Product[];
-  error: string | null;
-  addToCart: (product: Product) => Promise<void>;
-  removeFromCart: (productId: string) => Promise<void>;
-  clearCart: (serverAlreadyCleared?: boolean) => Promise<void>;
-  dismissError: () => void;
+  addToCart: (product: Product, quantity?: number) => void;
+  setQuantity: (product: Product, quantity: number) => void;
+  removeFromCart: (productId: string) => void;
+  clearCart: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<Product[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [isHydrated, setIsHydrated] = useState(false);
-  const previousToken = useRef<string | null>(getAuthToken());
 
-  const refreshRemoteCart = useCallback(async () => {
-    const cartItems = await apiRequest<ApiCartItem[]>("/api/cart", {}, true);
-    const products = expandCartItems(cartItems);
-    setItems(products);
-    return cartItems;
+  // Load cart from localStorage on mount
+  useEffect(() => {
+    // Try to load the cart from localStorage
+    const cart = localStorage.getItem("cart");
+    if (cart) {
+      // If the cart is found, parse it and set it to the state
+      setItems(JSON.parse(cart));
+    }
   }, []);
 
+  // Save cart to localStorage when it changes
   useEffect(() => {
-    const cart = window.localStorage.getItem("cart");
-    if (cart) {
-      try {
-        setItems(JSON.parse(cart) as Product[]);
-      } catch {
-        setError("Your saved cart could not be read. Please add your items again.");
-      }
-    }
-    setIsHydrated(true);
-
-    if (getAuthToken()) {
-      void refreshRemoteCart().catch((requestError: Error) => {
-        setError(requestError.message);
-      });
-    }
-  }, [refreshRemoteCart]);
-
-  useEffect(() => {
-    if (!isHydrated) return;
     try {
-      window.localStorage.setItem("cart", JSON.stringify(items));
-    } catch (storageError) {
-      console.error("Failed to save cart to localStorage:", storageError);
-      setError("Your cart could not be saved on this device.");
+      // Save the current cart to localStorage
+      localStorage.setItem("cart", JSON.stringify(items));
+    } catch (error) {
+      // If there's an error, log it to the console
+      console.error("Failed to save cart to localStorage:", error);
     }
-  }, [isHydrated, items]);
+  }, [items]);
 
-  useEffect(() => {
-    const handleAuthChange = async () => {
-      const token = getAuthToken();
-      const previous = previousToken.current;
-      previousToken.current = token;
-
-      if (!token) {
-        return;
-      }
-
-      try {
-        if (!previous) {
-          for (const product of items) {
-            await apiRequest(
-              "/api/cart",
-              {
-                method: "POST",
-                body: JSON.stringify({ productId: product.id, quantity: 1 }),
-              },
-              true
-            );
-          }
-        }
-        await refreshRemoteCart();
-        setError(null);
-      } catch (requestError) {
-        setError(
-          requestError instanceof Error
-            ? requestError.message
-            : "Could not synchronize your cart."
-        );
-      }
-    };
-
-    window.addEventListener("nardishop-auth-change", handleAuthChange);
-    return () => {
-      window.removeEventListener("nardishop-auth-change", handleAuthChange);
-    };
-  }, [items, refreshRemoteCart]);
-
-  const addToCart = async (product: Product) => {
-    try {
-      if (getAuthToken()) {
-        await apiRequest(
-          "/api/cart",
-          {
-            method: "POST",
-            body: JSON.stringify({ productId: product.id, quantity: 1 }),
-          },
-          true
-        );
-        await refreshRemoteCart();
-      } else {
-        setItems((currentItems) => [...currentItems, product]);
-      }
-      setError(null);
-    } catch (requestError) {
-      setError(
-        requestError instanceof Error ? requestError.message : "Could not add item to cart."
-      );
-    }
+  /**
+   * Adds a product to the cart.
+   *
+   * @param product - The product to add to the cart.
+   * @param quantity - How many of the product to add (defaults to 1).
+   */
+  const addToCart = (product: Product, quantity = 1) => {
+    // Append one copy of the product per unit to the existing items array
+    setItems((items) => [...items, ...Array(quantity).fill(product)]);
   };
 
-  const removeFromCart = async (productId: string) => {
-    try {
-      if (getAuthToken()) {
-        const cartItems = await apiRequest<ApiCartItem[]>("/api/cart", {}, true);
-        const cartItem = cartItems.find((item) => item.product.id === productId);
-        if (!cartItem) {
-          await refreshRemoteCart();
-          return;
-        }
+  /**
+   * Sets how many of a product (in its chosen size) are in the cart. A
+   * quantity of 0 removes it.
+   *
+   * @param product - The product whose quantity should change.
+   * @param quantity - The new quantity.
+   */
+  const setQuantity = (product: Product, quantity: number) => {
+    setItems((items) => {
+      const firstIndex = items.findIndex((item) => isSameCartLine(item, product));
+      const otherItems = items.filter((item) => !isSameCartLine(item, product));
+      const copies: Product[] = Array(Math.max(0, quantity)).fill(product);
 
-        await apiRequest(`/api/cart/${encodeURIComponent(cartItem.id)}`, {
-          method: "DELETE",
-        }, true);
-        if (cartItem.quantity > 1) {
-          await apiRequest(
-            "/api/cart",
-            {
-              method: "POST",
-              body: JSON.stringify({
-                productId,
-                quantity: cartItem.quantity - 1,
-              }),
-            },
-            true
-          );
-        }
-        await refreshRemoteCart();
-      } else {
-        setItems((currentItems) => {
-          const index = currentItems.findIndex((item) => item.id === productId);
-          if (index < 0) return currentItems;
-          return currentItems.filter((_, itemIndex) => itemIndex !== index);
-        });
-      }
-      setError(null);
-    } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Could not remove item from cart."
-      );
-    }
+      // Keep the product in the same place in the cart
+      const insertAt = firstIndex === -1 ? otherItems.length : firstIndex;
+      return [...otherItems.slice(0, insertAt), ...copies, ...otherItems.slice(insertAt)];
+    });
   };
 
-  const clearCart = async (serverAlreadyCleared = false) => {
-    try {
-      if (getAuthToken() && !serverAlreadyCleared) {
-        const cartItems = await apiRequest<ApiCartItem[]>("/api/cart", {}, true);
-        await Promise.all(
-          cartItems.map((item) =>
-            apiRequest(`/api/cart/${encodeURIComponent(item.id)}`, {
-              method: "DELETE",
-            }, true)
-          )
-        );
+  /**
+   * Removes a product from the cart by its ID.
+   *
+   * @param productId - The ID of the product to remove.
+   */
+  const removeFromCart = (productId: string) => {
+    setItems((items) => {
+      // Find the index of the product with the given ID
+      const index = items.findIndex((item) => item.id === productId);
+
+      // If the product is in the cart, remove it
+      if (index !== -1) {
+        const newItems = [...items];
+        newItems.splice(index, 1); // Remove the product from the array
+        return newItems; // Return the updated items array
       }
-      setItems([]);
-      setError(null);
-    } catch (requestError) {
-      setError(
-        requestError instanceof Error ? requestError.message : "Could not clear cart."
-      );
-    }
+      return items; // If product not found, return the original items array
+    });
+  };
+
+  /**
+   * Removes all products from the cart.
+   */
+  const clearCart = () => {
+    // Reset the items array to be empty
+    setItems([]);
   };
 
   return (
     <CartContext.Provider
       value={{
+        /**
+         * The list of products in the cart.
+         */
         items,
-        error,
+        /**
+         * Adds a product to the cart.
+         *
+         * @param product - The product to add to the cart.
+         */
         addToCart,
+        /**
+         * Sets how many of a product are in the cart.
+         */
+        setQuantity,
+        /**
+         * Removes a product from the cart by its ID.
+         *
+         * @param productId - The ID of the product to remove.
+         */
         removeFromCart,
+        /**
+         * Removes all products from the cart.
+         */
         clearCart,
-        dismissError: () => setError(null),
       }}
     >
       {children}
@@ -213,6 +135,41 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 }
 
+export interface CartLine {
+  product: Product;
+  quantity: number;
+}
+
+/** Two cart items belong to the same line when they are the same product in the same size */
+function isSameCartLine(a: Product, b: Product): boolean {
+  return a.id === b.id && (a.size ?? "") === (b.size ?? "");
+}
+
+/** A unique key for a cart line, e.g. for React lists */
+export function cartLineKey(product: Product): string {
+  return `${product.id}::${product.size ?? ""}`;
+}
+
+/**
+ * Groups the cart's items into one line per product and size with its quantity.
+ *
+ * @param items - The cart items (one entry per unit).
+ * @returns The cart lines, in the order products were first added.
+ */
+export function groupCartItems(items: Product[]): CartLine[] {
+  return items.reduce<CartLine[]>((lines, item) => {
+    const line = lines.find((l) => isSameCartLine(l.product, item));
+    if (line) line.quantity += 1;
+    else lines.push({ product: item, quantity: 1 });
+    return lines;
+  }, []);
+}
+
+/**
+ * Hook to access the cart context.
+ *
+ * @returns The cart context.
+ */
 export function useCart() {
   const context = useContext(CartContext);
   if (context === undefined) {

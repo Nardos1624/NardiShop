@@ -22,7 +22,7 @@ function Products() {
     <section className="w-full py-12">
       <div className="container mx-auto px-4 py-4 md:py-6 md:px-8">
         <h1 className="text-3xl font-bold mb-8">
-          <span className="text-[#E0E0E0] cursor-pointer"> All </span>
+          <span className="cursor-pointer text-[#281E18]"> All </span>
           <span className="cursor-pointer" style={{ color: pinkColor }}>
             Products
           </span>

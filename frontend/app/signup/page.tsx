@@ -5,45 +5,28 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UserPlus, Eye, EyeOff, CheckCircle2 } from "lucide-react";
-import { apiRequest } from "@/lib/api";
 
 export default function SignupPage() {
-  const pinkColor = "#D4AF37";
+  const pinkColor = "rgb(255, 182, 193)";
   const [showPassword, setShowPassword] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const inputStyles = "bg-zinc-900 border-zinc-700 text-white transition-all outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/30";
+  const inputStyles = "bg-zinc-900 border-zinc-700 text-white transition-all outline-none focus:border-[rgb(255,182,193)] focus:ring-1 focus:ring-[rgb(255,182,193)]/30";
   const passwordInputStyles = `${inputStyles} pr-10`; 
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    setError(null);
-    try {
-      await apiRequest<{ message: string }>("/api/auth/register", {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-      });
-      setShowPopup(true);
-      window.setTimeout(() => {
+    setShowPopup(true);
+    setTimeout(() => {
         setShowPopup(false);
-      }, 2000);
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Registration failed.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    }, 2000);
   };
 
   return (
-    <div className="min-h-screen bg-[#281E18] text-[#E0E0E0] flex items-center justify-center p-6 relative">
+    <div className="min-h-screen bg-[#212121] text-[#E0E0E0] flex items-center justify-center p-6 relative">
       {showPopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-[#2a2a2a] p-8 rounded-3xl border border-zinc-800 shadow-2xl flex flex-col items-center animate-in zoom-in-95 duration-300">
@@ -81,7 +64,7 @@ export default function SignupPage() {
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-zinc-300">Email Address</label>
-            <Input type="email" placeholder="nardishop@gmail.com" className={inputStyles} required value={email} onChange={(event) => setEmail(event.target.value)} />
+            <Input type="email" placeholder="nardishop@gmail.com" className={inputStyles} required />
           </div>
           
           <div className="space-y-2">
@@ -92,8 +75,6 @@ export default function SignupPage() {
                 placeholder="Create a password" 
                 className={passwordInputStyles} 
                 required 
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
               />
               <button
                 type="button"
@@ -113,10 +94,8 @@ export default function SignupPage() {
             By creating an account, you agree to our Terms of Service and Privacy Policy.
           </p>
 
-          {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
-
-          <Button type="submit" disabled={isSubmitting} className="w-full h-12 font-bold mt-2 cursor-pointer transition-transform active:scale-95 disabled:opacity-60" style={{ backgroundColor: pinkColor, color: "#212121" }}>
-            {isSubmitting ? "Creating Account..." : "Register Now"}
+          <Button type="submit" className="w-full h-12 font-bold mt-2 cursor-pointer transition-transform active:scale-95" style={{ backgroundColor: pinkColor, color: "#212121" }}>
+            Register Now
           </Button>
         </form>
 

@@ -100,10 +100,10 @@ function FilterSidebar({
         </AccordionItem>
 
         <AccordionItem value="price">
-          <AccordionTrigger>Price Range</AccordionTrigger>
+          {/* <AccordionTrigger>Price Range</AccordionTrigger> */}
           <AccordionContent>
             <div className="space-y-4">
-              <Slider
+              {/* <Slider
                 defaultValue={[minPrice, maxPrice]}
                 min={minPrice}
                 max={maxPrice}
@@ -113,14 +113,14 @@ function FilterSidebar({
                   onPriceChange(value as [number, number])
                 }
                 className="mt-6"
-              />
+              /> */}
               <div className="flex items-center justify-between">
-                <div className="border rounded-md px-2 py-1 w-20">
-                  ${priceRange[0]}
-                </div>
-                <div className="border rounded-md px-2 py-1 w-20 text-right">
-                  ${priceRange[1]}
-                </div>
+                {/* <div className="border rounded-md px-2 py-1 w-20">
+                  {priceRange[0]} ETB
+                </div> */}
+                {/* <div className="border rounded-md px-2 py-1 w-20 text-right">
+                  {priceRange[1]} ETB
+                </div> */}
               </div>
             </div>
           </AccordionContent>

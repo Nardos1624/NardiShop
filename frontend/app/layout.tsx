@@ -14,6 +14,8 @@ const montserrat = localFont({
 
 import "./globals.css";
 import { CartProvider } from "@/hooks/use-cart";
+import SocialLinksBar from "@/components/social-links-bar";
+import AnnouncementBar from "@/components/announcement-bar";
 
 export const metadata: Metadata = {
   title: {
@@ -34,8 +36,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       {/* 3. Add the font class to the body */}
-      <body className={`${montserrat.variable} antialiased bg-[#281E18]`}>
-        <CartProvider>{children}</CartProvider>
+      <body className={`${montserrat.variable} antialiased bg-white text-[#281E18]`}>
+        <CartProvider>
+          <AnnouncementBar />
+          {children}
+          <SocialLinksBar />
+        </CartProvider>
       </body>
     </html>
   );

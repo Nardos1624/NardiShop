@@ -1,9 +1,10 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import { useEffect, useState, Suspense } from "react"; // Added Suspense import
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState, Suspense } from "react"; // Added Suspense import
 
 import { getCategoriesForProducts } from "@/lib/data";
+import { splitCategory } from "@/lib/catalog";
 import { fetchProducts } from "@/lib/api";
 import { Product } from "@/lib/types";
 import ProductCard from "@/components/product-card";
@@ -18,60 +19,59 @@ import PoweredBy from "@/components/powered-by";
 
 // 1. Created a sub-component for the search logic
 function SearchContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const initialQuery = searchParams.get("q") || "";
+  const urlQuery = searchParams.get("q") || "";
 
-  const [searchQuery, setSearchQuery] = useState(initialQuery);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [searchQuery, setSearchQuery] = useState(urlQuery);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 300]);
+  const [error, setError] = useState<string | null>(null);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 0]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
-  const categories = getCategoriesForProducts(allProducts);
+  const categories = useMemo(() => getCategoriesForProducts(allProducts), [allProducts]);
 
-  const minPrice = allProducts.length
-    ? Math.min(...allProducts.map((product) => product.price))
-    : 0;
-  const maxPrice = allProducts.length
-    ? Math.max(...allProducts.map((product) => product.price))
-    : 300;
+  const prices = allProducts.map((product) => product.price);
+  const minPrice = prices.length ? Math.floor(Math.min(...prices)) : 0;
+  const maxPrice = prices.length ? Math.ceil(Math.max(...prices)) : 0;
 
   useEffect(() => {
     fetchProducts()
       .then((products) => {
         setAllProducts(products);
-        setPriceRange([0, Math.max(300, ...products.map((product) => product.price))]);
+        const productPrices = products.map((product) => product.price);
+        if (productPrices.length) {
+          setPriceRange([Math.floor(Math.min(...productPrices)), Math.ceil(Math.max(...productPrices))]);
+        }
       })
-      .catch((requestError: Error) => setLoadError(requestError.message))
+      .catch((requestError: Error) => setError(requestError.message))
       .finally(() => setIsLoading(false));
   }, []);
 
+  // Keep the input in sync when a new search is made from the navbar while already on this page
   useEffect(() => {
-    let results = [...allProducts];
+    setSearchQuery(urlQuery);
+  }, [urlQuery]);
 
-    if (searchQuery) {
-      results = results.filter(
-        (product) =>
-          product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          product.description.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
+  const filteredProducts = useMemo(() => {
+    const terms = searchQuery.toLowerCase().trim().split(/\s+/).filter(Boolean);
 
-    if (selectedCategories.length > 0) {
-      results = results.filter((product) => selectedCategories.includes(product.category));
-    }
+    return allProducts.filter((product) => {
+      const searchableText = `${product.name} ${product.description} ${product.category}`.toLowerCase();
+      const matchesQuery = terms.every((term) => searchableText.includes(term));
+      const matchesCategory =
+        selectedCategories.length === 0 || selectedCategories.includes(splitCategory(product.category).main);
+      const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
 
-    results = results.filter(
-      (product) => product.price >= priceRange[0] && product.price <= priceRange[1]
-    );
-
-    setFilteredProducts(results);
-  }, [searchQuery, priceRange, selectedCategories, allProducts]);
+      return matchesQuery && matchesCategory && matchesPrice;
+    });
+  }, [allProducts, searchQuery, selectedCategories, priceRange]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    const query = searchQuery.trim();
+    router.replace(query ? `/search?q=${encodeURIComponent(query)}` : "/search");
   };
 
   const handleCategoryChange = (category: string) => {
@@ -84,6 +84,7 @@ function SearchContent() {
     setSelectedCategories([]);
     setPriceRange([minPrice, maxPrice]);
     setSearchQuery("");
+    router.replace("/search");
   };
 
   const handlePriceChange = (range: [number, number]) => {
@@ -92,27 +93,10 @@ function SearchContent() {
 
   return (
     <div className="container mx-auto px-4 py-4 md:py-6 md:px-8">
-      <div className="mb-8 w-full max-w-3xl">
-        <h1 className="mb-4 text-2xl font-bold">
-          <span style={{ color: "#D4AF37" }}>Search Products</span>
-        </h1>
-        <form onSubmit={handleSearch} className="flex w-full">
-          <Input
-            type="search"
-            placeholder="Search products..."
-            className="h-12 w-full text-base"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <Button type="submit" className="ml-2 h-12 px-5">
-            <SearchIcon className="h-5 w-5" />
-            <span className="sr-only">Search</span>
-          </Button>
-        </form>
-      </div>
       <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:gap-6">
         {/* Mobile Filter Button */}
         <div className="flex md:hidden justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold text-black ">Search Products</h1>
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="outline" size="sm">
@@ -153,15 +137,48 @@ function SearchContent() {
 
         {/* Main Content */}
         <div className="flex-1">
+          <div className="md:hidden">
+            <form onSubmit={handleSearch} className="flex w-full mb-6">
+              <Input
+                type="search"
+                placeholder="Search products..."
+                className="w-full"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <Button type="submit" className="ml-2">
+                <SearchIcon className="h-4 w-4" />
+              </Button>
+            </form>
+          </div>
+
+          <div className="hidden md:block mb-6">
+            <h1 className="text-2xl font-bold mb-4 text-black">Search Products</h1>
+            <form onSubmit={handleSearch} className="flex w-full">
+              <Input
+                type="search"
+                placeholder="Search products..."
+                className="w-full"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <Button type="submit" className="ml-2">
+                <SearchIcon className="h-4 w-4" />
+              </Button>
+            </form>
+          </div>
+
+          {error ? (
+            <p role="alert" className="text-center py-12 text-red-400">{error}</p>
+          ) : isLoading ? (
+            <p className="text-center py-12 text-zinc-500">Loading products...</p>
+          ) : (
+          <>
           <div className="mb-4 text-sm text-gray-500">
             {filteredProducts.length} {filteredProducts.length === 1 ? "product" : "products"} found
           </div>
 
-          {loadError ? (
-            <p role="alert" className="text-center py-12 text-red-400">{loadError}</p>
-          ) : isLoading ? (
-            <p className="text-center py-12 text-zinc-500">Loading products...</p>
-          ) : filteredProducts.length === 0 ? (
+          {filteredProducts.length === 0 ? (
             <div className="text-center py-12">
               <h2 className="text-xl font-medium">No products found</h2>
               <p className="text-gray-500 mt-2">Try adjusting your search or filter criteria</p>
@@ -175,6 +192,8 @@ function SearchContent() {
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
+          )}
+          </>
           )}
         </div>
       </div>

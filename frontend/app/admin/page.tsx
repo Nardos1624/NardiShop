@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import ProductImage from "@/components/product-image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ApiError, apiRequest, clearAuthSession, fetchProducts, getAuthToken, getAuthUser } from "@/lib/api";
+import { ApiError, apiRequest, clearAuthSession, fetchProducts, getAuthToken, hasValidAdminSession } from "@/lib/api";
 import { getAllCategories } from "@/lib/data";
+import { findMainCategory, getSizesForCategory, joinCategory, splitCategory } from "@/lib/catalog";
 import { Product } from "@/lib/types";
 
 interface ProductForm {
@@ -34,15 +35,24 @@ export default function AdminPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [subcategory, setSubcategory] = useState("");
+
+  // Categories products already use that are not in the catalog (e.g. older ones)
+  const otherCategories = Array.from(new Set(products.map((product) => splitCategory(product.category).main)))
+    .filter((name) => name && !findMainCategory(name))
+    .sort((a, b) => a.localeCompare(b));
+  const subcategoryOptions = isCreatingCategory ? [] : findMainCategory(form.category)?.subcategories ?? [];
+  const selectedSizes = subcategory ? getSizesForCategory(joinCategory(form.category, subcategory)) : [];
 
   async function loadProducts() {
     setProducts(await fetchProducts());
   }
 
   useEffect(() => {
-    const user = getAuthUser();
-    if (!getAuthToken() || user?.role !== "admin") {
-      setIsCheckingAccess(false);
+    // Not signed in as an admin (or the login expired): go to the login page
+    if (!hasValidAdminSession()) {
+      if (getAuthToken()) clearAuthSession();
+      router.replace("/login");
       return;
     }
 
@@ -50,12 +60,12 @@ export default function AdminPage() {
     loadProducts()
       .catch((loadError: Error) => setError(loadError.message))
       .finally(() => setIsCheckingAccess(false));
-  }, []);
+  }, [router]);
 
   async function handleCreateProduct(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formElement = event.currentTarget;
-    const category = isCreatingCategory ? newCategory.trim() : form.category;
+    const category = isCreatingCategory ? newCategory.trim() : joinCategory(form.category, subcategory || undefined);
     if (!image) {
       setError("Choose an image file for this product.");
       return;
@@ -83,6 +93,7 @@ export default function AdminPage() {
         true
       );
       setForm(emptyForm);
+      setSubcategory("");
       setNewCategory("");
       setIsCreatingCategory(false);
       setImage(null);
@@ -127,25 +138,15 @@ export default function AdminPage() {
   }
 
   if (isCheckingAccess) {
-    return <main className="min-h-screen bg-[#281E18] p-8 text-center text-zinc-300">Checking administrator access...</main>;
+    return <main className="min-h-screen bg-white p-8 text-center text-[#281E18]">Checking administrator access...</main>;
   }
 
   if (!isAdmin) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#281E18] p-6 text-[#E0E0E0]">
-        <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-[#2a2a2a] p-8 text-center">
-          <h1 className="text-2xl font-bold">Administrator sign-in required</h1>
-          <p className="mt-3 text-zinc-400">Sign in with an administrator account to manage products.</p>
-          <Button asChild className="mt-6" style={{ backgroundColor: "#D4AF37", color: "#212121" }}>
-            <Link href="/login">Go to login</Link>
-          </Button>
-        </div>
-      </main>
-    );
+    return <main className="min-h-screen bg-white p-8 text-center text-[#281E18]">Redirecting to login...</main>;
   }
 
   return (
-    <main className="min-h-screen bg-[#281E18] px-4 py-8 text-[#E0E0E0] md:px-8">
+    <main className="min-h-screen bg-white px-4 py-8 text-[#281E18] md:px-8">
       <div className="mx-auto max-w-6xl">
         <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -166,7 +167,7 @@ export default function AdminPage() {
           </div>
         </header>
 
-        <section className="mb-10 rounded-2xl border border-zinc-800 bg-[#2a2a2a] p-6">
+        <section className="mb-10 rounded-2xl border border-zinc-200 bg-white p-6">
           <h2 className="mb-5 text-xl font-semibold">Add a product</h2>
           <form onSubmit={handleCreateProduct} className="grid gap-4 md:grid-cols-2">
             <label className="space-y-2 text-sm">
@@ -182,19 +183,45 @@ export default function AdminPage() {
                   const value = event.target.value;
                   setIsCreatingCategory(value === NEW_CATEGORY_OPTION);
                   setForm({ ...form, category: value === NEW_CATEGORY_OPTION ? "" : value });
+                  setSubcategory("");
                 }}
-                className="h-9 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-base text-white outline-none focus:border-[#D4AF37]"
+                className="h-9 w-full rounded-md border border-zinc-300 bg-white px-3 text-base text-[#281E18] outline-none focus:border-[#D4AF37]"
               >
                 <option value="" disabled>Select a category</option>
-                {Array.from(new Set([
-                  ...getAllCategories().map((category) => category.name),
-                  ...products.map((product) => product.category),
-                ])).filter(Boolean).sort((a, b) => a.localeCompare(b)).map((category) => (
-                  <option key={category} value={category}>{category}</option>
+                {getAllCategories().map((category) => (
+                  <option key={category.name} value={category.name}>{category.name}</option>
                 ))}
+                {otherCategories.length > 0 && (
+                  <optgroup label="Other categories in use">
+                    {otherCategories.map((category) => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </optgroup>
+                )}
                 <option value={NEW_CATEGORY_OPTION}>Add a new category...</option>
               </select>
             </label>
+            {subcategoryOptions.length > 0 && (
+              <label className="space-y-2 text-sm">
+                Subcategory
+                <select
+                  required
+                  value={subcategory}
+                  onChange={(event) => setSubcategory(event.target.value)}
+                  className="h-9 w-full rounded-md border border-zinc-300 bg-white px-3 text-base text-[#281E18] outline-none focus:border-[#D4AF37]"
+                >
+                  <option value="" disabled>Select a subcategory</option>
+                  {subcategoryOptions.map((sub) => (
+                    <option key={sub.name} value={sub.name}>{sub.name}</option>
+                  ))}
+                </select>
+                {selectedSizes.length > 0 && (
+                  <span className="block text-xs text-zinc-600">
+                    Shoppers will choose a size: {selectedSizes.join(", ")}
+                  </span>
+                )}
+              </label>
+            )}
             {isCreatingCategory && (
               <label className="space-y-2 text-sm">
                 New category name
@@ -221,10 +248,10 @@ export default function AdminPage() {
                 required
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
-                className="text-white file:text-white"
+                className="text-[#281E18] file:text-[#281E18]"
                 onChange={(event) => setImage(event.target.files?.[0] ?? null)}
               />
-              <span className="block text-xs text-zinc-500">JPEG, PNG, or WebP; maximum size 5 MB.</span>
+              <span className="block text-xs text-zinc-600">JPEG, PNG, or WebP; maximum size 5 MB.</span>
             </label>
             <label className="space-y-2 text-sm md:col-span-2">
               Description
@@ -232,7 +259,7 @@ export default function AdminPage() {
                 required
                 value={form.description}
                 onChange={(event) => setForm({ ...form, description: event.target.value })}
-                className="min-h-24 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-base outline-none focus:border-[#D4AF37]"
+                className="min-h-24 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-base text-[#281E18] outline-none focus:border-[#D4AF37]"
               />
             </label>
             {error && <p role="alert" className="text-sm text-red-400 md:col-span-2">{error}</p>}
@@ -248,19 +275,19 @@ export default function AdminPage() {
         <section>
           <h2 className="mb-5 text-xl font-semibold">Products ({products.length})</h2>
           {products.length === 0 ? (
-            <p className="rounded-xl border border-zinc-800 p-6 text-zinc-400">No products found.</p>
+            <p className="rounded-xl border border-zinc-200 p-6 text-zinc-600">No products found.</p>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {products.map((product) => (
-                <article key={product.id} className="overflow-hidden rounded-xl border border-zinc-800 bg-[#2a2a2a]">
+                <article key={product.id} className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
                   <div className="relative aspect-square">
-                    <ProductImage src={product.image} alt={product.name} className="object-cover" />
+                    <ProductImage src={product.image} alt={product.name} className="object-contain" />
                   </div>
                   <div className="flex items-center justify-between gap-4 p-4">
                     <div className="min-w-0">
                       <h3 className="truncate font-semibold">{product.name}</h3>
-                      <p className="text-sm text-zinc-400">{product.category}</p>
-                      <p className="text-sm text-zinc-400">${product.price.toFixed(2)}</p>
+                      <p className="text-sm text-zinc-600">{product.category}</p>
+                      <p className="text-sm text-zinc-600">{product.price.toFixed(2)} ETB</p>
                     </div>
                     <Button
                       variant="outline"

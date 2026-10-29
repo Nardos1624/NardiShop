@@ -1,8 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 body {
-  background-color: #281E18;
-  color: #E0E0E0;
+  background-color: #ffffff;
+  color: #281E18;
 }
 
 .navbar-header {
@@ -117,4 +117,34 @@ body {
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.552 0.016 285.938);
+}
+
+/* Announcement bar: the track moves right by its full width while the text moves
+   left by its own width, so the message travels exactly from edge to edge. */
+@keyframes announcement-track {
+  from { transform: translateX(0); }
+  to { transform: translateX(100%); }
+}
+
+@keyframes announcement-text {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+
+.announcement-track {
+  animation: announcement-track 25s ease-in-out infinite alternate;
+}
+
+.announcement-text {
+  animation: announcement-text 25s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .announcement-track,
+  .announcement-text {
+    animation: none;
+  }
+  .announcement-track {
+    text-align: center;
+  }
 }
