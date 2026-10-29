@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { ProductController } from "../controllers/product.controller";
 import { authenticateToken, requireAdmin } from "../middleware/auth.js"; // Chained admin gatekeeper
-import { uploadImage } from "../middleware/upload.js"; // Multer image handler
+import { uploadImageInMemory } from "../middleware/upload.js"; // Multer image handler
 
 const router = Router();
 const productController = new ProductController();
@@ -15,7 +15,7 @@ router.get("/:id", productController.getProductById);
 // POST /api/products - Create a new product with an image (Admin Only)
 router.post(
     "/", 
-    [authenticateToken as any, requireAdmin as any, uploadImage.single("image") as any], 
+    [authenticateToken as any, requireAdmin as any, uploadImageInMemory.single("image") as any], 
     productController.createProduct
 );
 

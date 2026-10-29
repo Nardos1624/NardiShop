@@ -39,7 +39,29 @@ export const authenticateToken = (
     }
 };
 
-// 3. Middleware to enforce Role-Based Access Control (RBAC)
+// 3. Middleware for public routes: attaches the user when a valid token is sent, but lets guests through
+export const optionalAuth = (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+): void => {
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1];
+
+    if (token) {
+        try {
+            const secret = process.env.JWT_SECRET || "fallback_secret_key";
+            const decoded = jwt.verify(token, secret) as { id: string; role: "customer" | "admin" };
+            req.user = { id: decoded.id, role: decoded.role };
+        } catch {
+            // An expired or invalid token just means the order is placed as a guest
+        }
+    }
+
+    next();
+};
+
+// 4. Middleware to enforce Role-Based Access Control (RBAC)
 export const requireAdmin = (
     req: AuthenticatedRequest,
     res: Response,

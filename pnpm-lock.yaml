@@ -123,6 +123,12 @@ importers:
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
+      sharp:
+        specifier: 0.34.5
+        version: 0.34.5
+      tsx:
+        specifier: ^4.23.15
+        version: 4.23.15
       typeorm:
         specifier: ^1.0.0
         version: 1.1.2(pg@8.23.1)(supports-color@7.2.0)
@@ -142,9 +148,9 @@ importers:
       '@types/node':
         specifier: ^25.9.2
         version: 25.9.9
-      tsx:
-        specifier: ^4.19.3
-        version: 4.23.15
+      '@types/pg':
+        specifier: ^8.23.1
+        version: 8.23.1
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -1175,6 +1181,9 @@ packages:
 
   '@types/node@25.9.9':
     resolution: {integrity: sha512-b4e2xxj/yMeT2hNlD6x7zNFiQK2Dlmkb9CQ6v3/1G2RezKN4YS2lcEv8lzGm1mhs4f2lM4yNAMI/zUDBZBBt7w==}
+
+  '@types/pg@8.23.1':
+    resolution: {integrity: sha512-fKVHpikPdg4GKks3JuLEhvwSyvwzF23hnabPy6DD8ljVbC7+6J5dQzdv4arV6jqq57djnMgs1HKBxX4P8aBI3A==}
 
   '@types/qs@6.15.1':
     resolution: {integrity: sha512-GZHUBZR9hckSUhrxmp1nG6NwdpM9fCunJwyThLW1X3AyHgd9IlHb6VANpQQqDr2o/qQp6McZ3y/IA2rVzKzSbw==}
@@ -3306,8 +3315,7 @@ snapshots:
 
   '@humanwhocodes/retry@0.4.3': {}
 
-  '@img/colour@1.1.0':
-    optional: true
+  '@img/colour@1.1.0': {}
 
   '@img/sharp-darwin-arm64@0.34.5':
     optionalDependencies:
@@ -3879,6 +3887,12 @@ snapshots:
   '@types/node@25.9.9':
     dependencies:
       undici-types: 7.24.6
+
+  '@types/pg@8.23.1':
+    dependencies:
+      '@types/node': 25.9.9
+      pg-protocol: 1.16.1
+      pg-types: 2.2.0
 
   '@types/qs@6.15.1': {}
 
@@ -5717,7 +5731,6 @@ snapshots:
       '@img/sharp-win32-arm64': 0.34.5
       '@img/sharp-win32-ia32': 0.34.5
       '@img/sharp-win32-x64': 0.34.5
-    optional: true
 
   shebang-command@2.0.0:
     dependencies:

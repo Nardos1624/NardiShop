@@ -53,6 +53,16 @@ export interface ApiOrderResponse {
   };
 }
 
+export interface ApiPlaceOrderResponse {
+  message: string;
+  order: {
+    id: string;
+    invoiceNumber: string;
+    total: number;
+    amountPaid: number;
+  };
+}
+
 export class ApiError extends Error {
   constructor(message: string, public readonly status: number) {
     super(message);

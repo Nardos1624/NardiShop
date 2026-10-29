@@ -1,9 +1,11 @@
 import { Request, Response } from "express";
 import { AppDataSource } from "../config/data-source.js";
 import { Product } from "../entities/Product.entity.js"; // Ensure matching your exact file name extension format
+import { ImageService, InvalidImageError } from "../services/image.service.js";
 
 export class ProductController {
     private productRepository = AppDataSource.getRepository(Product);
+    private imageService = new ImageService();
 
     // 1. Create a new product with an image (Admin Only)
     createProduct = async (req: Request, res: Response): Promise<void> => {
@@ -21,8 +23,9 @@ export class ProductController {
                 return;
             }
 
-            // Generate a local server URL reference path for the file
-            const imageUrl = `/uploads/${req.file.filename}`;
+            // Shrink the photo and save it in the database, so it survives server restarts
+            const image = await this.imageService.saveProductImage(req.file.buffer);
+            const imageUrl = `/api/images/${image.id}`;
 
             const product = this.productRepository.create({
                 name,
@@ -40,6 +43,10 @@ export class ProductController {
                 product
             });
         } catch (error: any) {
+            if (error instanceof InvalidImageError) {
+                res.status(400).json({ message: error.message });
+                return;
+            }
             res.status(500).json({ message: "Failed to create product", error: error.message });
         }
     };

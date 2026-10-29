@@ -5,8 +5,135 @@ import { CartItem } from "../entities/CartItem.entity";
 import { Product } from "../entities/Product.entity";
 import { User } from "../entities/User.entity";
 import crypto from "crypto";
+import { In } from "typeorm";
+import { StoredImage } from "../entities/StoredImage.entity";
+import { imageIdFromUrl } from "./image.service.js";
+
+export interface CheckoutCustomer {
+    firstName: string;
+    lastName: string;
+    telegramUsername: string;
+    phone: string;
+    secondPhone: string | null;
+    city: string;
+    address: string;
+}
+
+export interface CheckoutLine {
+    productId: string;
+    quantity: number;
+    size: string | null;
+}
+
+export interface CheckoutScreenshot {
+    data: Buffer;
+    mimeType: string;
+}
+
+// Human-readable invoice reference, e.g. INV-2026-3FA9C1
+const createInvoiceNumber = (): string =>
+    `INV-${new Date().getFullYear()}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
 
 export class OrderService {
+    // Place an order from the checkout form (guests and logged-in customers).
+    // Prices come from the database, never from the browser.
+    async placeOrder(
+        customer: CheckoutCustomer,
+        lines: CheckoutLine[],
+        screenshot: CheckoutScreenshot,
+        userId: string | null
+    ): Promise<Order> {
+        const queryRunner = AppDataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
+        try {
+            const productIds = [...new Set(lines.map((line) => line.productId))];
+            const products = await queryRunner.manager.findBy(Product, { id: In(productIds) });
+            const productsById = new Map(products.map((product) => [product.id, product]));
+            // Link each line to its product's stored photo (if the photo exists)
+            const imageIds = products.map((product) => imageIdFromUrl(product.imageUrl)).filter((id) => id !== null);
+            const images = imageIds.length ? await queryRunner.manager.findBy(StoredImage, { id: In(imageIds) }) : [];
+            const imagesById = new Map(images.map((image) => [image.id, image]));
+
+            let totalAmount = 0;
+            const orderItems: OrderItem[] = [];
+
+            for (const line of lines) {
+                const product = productsById.get(line.productId);
+                if (!product) {
+                    throw new Error("Some products in your cart are no longer available. Please remove them and try again.");
+                }
+
+                if (product.stock < line.quantity) {
+                    throw new Error(`'${product.name}' doesn't have enough stock. Available: ${product.stock}`);
+                }
+
+                // The same product can appear twice in different sizes, so stock is tracked on the shared entity
+                product.stock -= line.quantity;
+                totalAmount += Number(product.price) * line.quantity;
+
+                orderItems.push(queryRunner.manager.create(OrderItem, {
+                    quantity: line.quantity,
+                    price: product.price,
+                    productName: product.name,
+                    size: line.size,
+                    productImage: imagesById.get(imageIdFromUrl(product.imageUrl) ?? "") ?? null,
+                    product,
+                }));
+            }
+
+            await queryRunner.manager.save(products);
+
+            const user = userId ? await queryRunner.manager.findOneBy(User, { id: userId }) : null;
+
+            const order = queryRunner.manager.create(Order, {
+                ...customer,
+                user,
+                total: totalAmount,
+                amountPaid: Math.round((totalAmount / 2) * 100) / 100,
+                invoiceNumber: createInvoiceNumber(),
+                paymentScreenshot: screenshot.data,
+                paymentScreenshotType: screenshot.mimeType,
+                orderItems,
+            });
+
+            const savedOrder = await queryRunner.manager.save(order);
+            await queryRunner.commitTransaction();
+            return savedOrder;
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
+        }
+    }
+
+    // Record whether the order reached the shop's Telegram chat
+    async markTelegramSent(orderId: string): Promise<void> {
+        await AppDataSource.getRepository(Order).update(orderId, { telegramSent: true });
+    }
+
+    // Every order, newest first, for the admin (screenshots are fetched separately)
+    async getAllOrders(): Promise<Order[]> {
+        return await AppDataSource.getRepository(Order).find({
+            relations: { orderItems: { productImage: true }, user: true },
+            order: { createdAt: "DESC" },
+        });
+    }
+
+    // The payment screenshot of one order, for the admin
+    async getPaymentScreenshot(orderId: string): Promise<CheckoutScreenshot | null> {
+        const order = await AppDataSource.getRepository(Order)
+            .createQueryBuilder("order")
+            .addSelect("order.paymentScreenshot")
+            .where("order.id = :orderId", { orderId })
+            .getOne();
+
+        if (!order?.paymentScreenshot || !order.paymentScreenshotType) return null;
+        return { data: order.paymentScreenshot, mimeType: order.paymentScreenshotType };
+    }
+
     // Process the checkout system and return a localized structured invoice receipt payload
     async checkout(userId: string): Promise<any> {
         // We use a query runner transaction to guarantee data integrity.

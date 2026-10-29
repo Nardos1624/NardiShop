@@ -6,31 +6,42 @@ import Footer from "@/components/footer";
 import PoweredBy from "@/components/powered-by";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CreditCard, Truck, ShoppingBag, ShieldCheck, CheckCircle2, User, X, Upload, ImageIcon } from "lucide-react";
+import { CreditCard, Truck, ShoppingBag, ShieldCheck, CheckCircle2, X, Upload, ImageIcon } from "lucide-react";
 import { cartLineKey, groupCartItems, useCart } from "@/hooks/use-cart";
 import Link from "next/link";
 import QuantitySelector from "@/components/quantity-selector";
-import { apiRequest, ApiOrderResponse, isAuthenticated } from "@/lib/api";
+import { apiRequest, ApiPlaceOrderResponse, getAuthToken } from "@/lib/api";
 import ProductImage from "@/components/product-image";
 
 const ALLOWED_SCREENSHOT_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_SCREENSHOT_SIZE = 5 * 1024 * 1024; // 5MB
 
+const EMPTY_SHIPPING = {
+  firstName: "",
+  lastName: "",
+  telegramUsername: "",
+  phone: "",
+  secondPhone: "",
+  city: "",
+  address: "",
+};
+
 export default function CheckoutPage() {
   const pinkColor = "#D4AF37";
   const { items, setQuantity, clearCart } = useCart();
-  const [isOrdered, setIsOrdered] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // Invoice number of the placed order; set once the order succeeds
+  const [placedInvoice, setPlacedInvoice] = useState<string | null>(null);
+  const [shipping, setShipping] = useState(EMPTY_SHIPPING);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
-  
-  // NEW: State to show the selection modal before finalizing
-  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Screenshot of the half payment; the order can't be placed without it
   const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [screenshotError, setScreenshotError] = useState<string | null>(null);
+
+  const updateShipping = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setShipping({ ...shipping, [e.target.name]: e.target.value });
 
   const inputStyles = "bg-white border-zinc-300 text-[#281E18] transition-all outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/30";
 
@@ -39,13 +50,6 @@ export default function CheckoutPage() {
   // Half of the order must be paid up front; the rest is paid later
   const halfPayment = total / 2;
   const remainingPayment = total - halfPayment;
-
-  useEffect(() => {
-    const updateAuthState = () => setIsLoggedIn(isAuthenticated());
-    updateAuthState();
-    window.addEventListener("nardishop-auth-change", updateAuthState);
-    return () => window.removeEventListener("nardishop-auth-change", updateAuthState);
-  }, []);
 
   // Free the preview image when it is replaced or the page closes
   useEffect(() => {
@@ -88,52 +92,55 @@ export default function CheckoutPage() {
     setScreenshotError(null);
   };
 
-  // This runs when the button is clicked
-  const handleCheckoutClick = (e: React.FormEvent) => {
+  // Place the order when the form is submitted
+  const placeOrder = async (e: React.FormEvent) => {
     e.preventDefault();
+    setCheckoutError(null);
     if (!paymentScreenshot) {
       setScreenshotError("Please upload the screenshot of your half payment before placing the order.");
       document.getElementById("payment-screenshot-section")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
-    // Instead of ordering immediately, we show the login/signup option
-    setShowAuthModal(true);
-  };
 
-  // This runs when they finally click "Complete as Guest" inside the modal
-  const finalizeOrder = async () => {
-    setCheckoutError(null);
-    if (!paymentScreenshot) {
-      setShowAuthModal(false);
-      setScreenshotError("Please upload the screenshot of your half payment before placing the order.");
-      return;
-    }
-    if (isAuthenticated()) {
-      setIsSubmitting(true);
-      try {
-        await apiRequest<ApiOrderResponse>(
-          "/api/orders/checkout",
-          { method: "POST" },
-          true
-        );
-        clearCart();
-      } catch (requestError) {
-        setCheckoutError(
-          requestError instanceof Error ? requestError.message : "Checkout failed."
-        );
-        setIsSubmitting(false);
-        return;
-      }
-      setIsSubmitting(false);
-    } else {
+    const formData = new FormData();
+    Object.entries(shipping).forEach(([name, value]) => formData.append(name, value.trim()));
+    formData.append(
+      "items",
+      JSON.stringify(
+        groupCartItems(items).map(({ product, quantity }) => ({
+          productId: product.id,
+          quantity,
+          size: product.size ?? null,
+        }))
+      )
+    );
+    formData.append("screenshot", paymentScreenshot);
+
+    // Logged-in customers send their token so the order is linked to their account
+    const token = getAuthToken();
+    setIsSubmitting(true);
+    try {
+      const response = await apiRequest<ApiPlaceOrderResponse>("/api/orders", {
+        method: "POST",
+        body: formData,
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
       clearCart();
+      setShipping(EMPTY_SHIPPING);
+      setPlacedInvoice(response.order.invoiceNumber);
+    } catch (requestError) {
+      setCheckoutError(
+        requestError instanceof Error ? requestError.message : "Checkout failed."
+      );
+      return;
+    } finally {
+      setIsSubmitting(false);
     }
 
-    setIsOrdered(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  if (isOrdered) {
+  if (placedInvoice) {
     return (
       <>
         <Navbar />
@@ -144,7 +151,12 @@ export default function CheckoutPage() {
             </div>
             <h1 className="text-3xl font-bold mb-4">
               <span style={{ color: "#D4AF37" }}>Order Successful!</span></h1>
-            <p className="text-zinc-400 mb-8">Thank you for your purchase. Your order has been placed successfully.</p>
+            <p className="text-zinc-400 mb-4">Thank you for your purchase. Your order has been placed successfully.</p>
+            <p className="mb-8 text-sm text-zinc-600">
+              Order number: <span className="font-bold text-[#281E18]">{placedInvoice}</span>
+              <br />
+              We&apos;ll confirm your payment and contact you on Telegram.
+            </p>
             <Button asChild className="w-full h-12 font-bold" style={{ backgroundColor: pinkColor, color: "#212121" }}>
               <Link href="/products">Continue Shopping</Link>
             </Button>
@@ -160,63 +172,13 @@ export default function CheckoutPage() {
     <>
       <Navbar />
       
-      {/* AUTH SELECTION MODAL */}
-      {showAuthModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="relative w-full max-w-lg animate-in rounded-3xl border border-zinc-200 bg-white p-8 shadow-2xl fade-in zoom-in duration-300">
-            <button 
-              onClick={() => setShowAuthModal(false)}
-              className="absolute right-4 top-4 text-zinc-500 hover:text-[#281E18]"
-            >
-              <X size={24} />
-            </button>
-            
-            <div className="text-center mb-8">
-              <div className="mb-4 inline-flex rounded-full bg-zinc-100 p-4">
-                <User size={32} style={{ color: pinkColor }} />
-              </div>
-              <h2 className="text-2xl font-bold">Wait! Save your info?</h2>
-              <p className="mt-2 text-sm text-zinc-600">Log in or Sign up to track your order and get rewards.</p>
-            </div>
-
-            <div className="space-y-3">
-              <Button asChild className="w-full h-12 font-bold" style={{ backgroundColor: pinkColor, color: "#212121" }}>
-                <Link href="/login">Log In to Account</Link>
-              </Button>
-              <Button asChild variant="outline" className="h-12 w-full border-zinc-300 font-bold hover:bg-zinc-100">
-                <Link href="/signup">Create New Account</Link>
-              </Button>
-              
-              <div className="relative py-4">
-                <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-zinc-800"></span></div>
-                <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-zinc-500">Or</span></div>
-              </div>
-
-              <Button 
-                onClick={finalizeOrder}
-                variant="ghost" 
-                disabled={isSubmitting}
-                className="h-12 w-full text-zinc-600 underline decoration-zinc-400 hover:text-[#281E18] disabled:opacity-60"
-              >
-                {isSubmitting
-                  ? "Processing order..."
-                  : isLoggedIn
-                    ? "Complete Order"
-                    : "No thanks, checkout as guest"}
-              </Button>
-              {checkoutError && <p role="alert" className="text-sm text-red-400">{checkoutError}</p>}
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="min-h-screen bg-white py-12 text-[#281E18]">
         <div className="container mx-auto px-4 md:px-8">
           <h1 className="text-4xl font-bold mb-10">
             Finalize <span style={{ color: pinkColor }}>Checkout</span>
           </h1>
 
-          <form onSubmit={handleCheckoutClick} className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+          <form onSubmit={placeOrder} className="grid grid-cols-1 lg:grid-cols-12 gap-12">
             <div className="lg:col-span-7 space-y-8">
               <section className="rounded-2xl border border-zinc-200 bg-white p-6">
                 <div className="flex items-center gap-3 mb-6">
@@ -224,14 +186,23 @@ export default function CheckoutPage() {
                   <h2 className="text-xl font-semibold">Shipping Information</h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input placeholder="First Name" className={inputStyles} required />
-                  <Input placeholder="Last Name" className={inputStyles} required />
-                  <Input placeholder="Telegram Username " type="email" className={`md:col-span-2 ${inputStyles}`} required/>
-                  <Input placeholder="+2519........" type="phone number" className={`md:col-span-2 ${inputStyles}`} required />
-                    <Input placeholder="+2519........" type="phone number" className={`md:col-span-2 ${inputStyles}`} />
+                  <Input name="firstName" value={shipping.firstName} onChange={updateShipping} placeholder="First Name" autoComplete="given-name" className={inputStyles} required />
+                  <Input name="lastName" value={shipping.lastName} onChange={updateShipping} placeholder="Last Name" autoComplete="family-name" className={inputStyles} required />
+                  <Input
+                    name="telegramUsername"
+                    value={shipping.telegramUsername}
+                    onChange={updateShipping}
+                    placeholder="Telegram Username (e.g. @nardishop)"
+                    pattern="@?[A-Za-z0-9_]{5,32}"
+                    title="Your Telegram username: 5–32 letters, numbers or underscores"
+                    className={`md:col-span-2 ${inputStyles}`}
+                    required
+                  />
+                  <Input name="phone" value={shipping.phone} onChange={updateShipping} placeholder="Phone number: +2519........" type="tel" autoComplete="tel" className={`md:col-span-2 ${inputStyles}`} required />
+                  <Input name="secondPhone" value={shipping.secondPhone} onChange={updateShipping} placeholder="Second phone number (optional): +2519........" type="tel" className={`md:col-span-2 ${inputStyles}`} />
                   {/* <Input placeholder="Address" className={`md:col-span-2 ${inputStyles}`} required /> */}
-                  <Input placeholder="City" className={inputStyles} required />
-                  <Input placeholder="Address" className={inputStyles} required />
+                  <Input name="city" value={shipping.city} onChange={updateShipping} placeholder="City" autoComplete="address-level2" className={inputStyles} required />
+                  <Input name="address" value={shipping.address} onChange={updateShipping} placeholder="Address" autoComplete="street-address" className={inputStyles} required />
                 </div>
               </section>
 
@@ -370,12 +341,15 @@ export default function CheckoutPage() {
 
                 <Button
                   type="submit"
-                  disabled={items.length === 0 || !paymentScreenshot}
+                  disabled={items.length === 0 || !paymentScreenshot || isSubmitting}
                   className="w-full h-14 text-lg font-bold transition-all hover:scale-[1.02] cursor-pointer disabled:opacity-50"
                   style={{ backgroundColor: items.length > 0 && paymentScreenshot ? pinkColor : "#555", color: "#212121" }}
                 >
-                  Place Order Now
+                  {isSubmitting ? "Placing your order..." : "Place Order Now"}
                 </Button>
+                {checkoutError && (
+                  <p role="alert" className="mt-3 text-center text-sm text-red-500">{checkoutError}</p>
+                )}
                 {items.length > 0 && !paymentScreenshot && (
                   <p className="mt-3 text-center text-sm text-red-500">
                     Upload your payment screenshot to place the order.
